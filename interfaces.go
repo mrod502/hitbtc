@@ -43,11 +43,13 @@ func (d Decimal) MarshalJSON() (b []byte, err error) {
 	return
 }
 
+//ID - implement indexer
 func (t Ticker) ID() []byte {
 	tt, _ := time.Parse(StringTimeFormat, t.Timestamp)
 	return []byte(fmt.Sprintf("%s%d", t.Symbol, tt.UnixNano()/1000000))
 }
 
+//Type - implement indexer
 func (t Ticker) Type() []byte {
 	return []byte("tkr")
 }

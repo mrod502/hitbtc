@@ -13,8 +13,8 @@ const (
 
 //endpoints
 const (
-	EPSymbol   = "/symbol"
-	EPCurrency = "/currency"
+	EPSymbol   = "/public/symbol"
+	EPCurrency = "public/currency"
 	EPTicker   = "/ticker"
 )
 

@@ -73,9 +73,9 @@ func echoTicker(b []byte) error {
 	return err
 }
 
+//SubscribeTicker - start receiving messages for ticker
 func (m *MessageRouter) SubscribeTicker(sym string) error {
 	val := fmt.Sprintf(`{"method":"subscribeTicker","params":{"symbol":"%v"},"id":%d}`, sym, mdReqID)
-	fmt.Println(val)
 
 	err := m.dataConn.WriteMessage(websocket.TextMessage, []byte(val))
 	if err != nil {
@@ -85,6 +85,7 @@ func (m *MessageRouter) SubscribeTicker(sym string) error {
 	return nil
 }
 
+//UnsubscribeTicker - stop receiving messages for ticker
 func (m *MessageRouter) UnsubscribeTicker(sym string) {
 	val := fmt.Sprintf(wssMthdString, WSSMthdSubscribeTicker, sym, mdReqID)
 	mdReqID++
