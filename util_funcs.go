@@ -1,13 +1,9 @@
 package hitbtc
 
 import (
-	"crypto"
-	"crypto/hmac"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/mrod502/logger"
@@ -32,7 +28,7 @@ func getWsURL() string {
 }
 
 func getMktDataMethod(b []byte) string {
-	fmt.Println(string(b))
+
 	res := ptnWsMethod.FindSubmatch(b)
 	if len(res) == 0 {
 		return "getSymbol"
@@ -49,6 +45,7 @@ func (m *MessageRouter) setLoginState(l bool) {
 	m.mux.Unlock()
 }
 
+/*
 func randomNonceString() string {
 	length := 16
 	var seededRand *rand.Rand = rand.New(
@@ -63,7 +60,7 @@ func randomNonceString() string {
 	return b
 
 }
-
+*/
 func echoTicker(b []byte) error {
 	var t struct {
 		Params Ticker
@@ -87,19 +84,30 @@ func (m *MessageRouter) SubscribeTicker(sym string) error {
 
 //UnsubscribeTicker - stop receiving messages for ticker
 func (m *MessageRouter) UnsubscribeTicker(sym string) {
-	val := fmt.Sprintf(wssMthdString, WSSMthdSubscribeTicker, sym, mdReqID)
-	mdReqID++
-	m.dataConn.WriteMessage(websocket.TextMessage, []byte(val))
+	var unsub TickerSubscription
+	unsub.Symbol = sym
+
+	m.doDataMethod(MthdUnsubscribeTicker, unsub)
 }
 
-func (m *MessageRouter) doMethod(method string, params interface{}) (err error) {
-	b, err := json.Marshal(params)
-	if err != nil {
-		return
-	}
+func (m *MessageRouter) doDataMethod(method dataMethod, params interface{}) (err error) {
 
-	val := fmt.Sprintf(wssMthdString, WSSMthdSubscribeTicker, string(b), mdReqID)
+	var msg Message
+	msg.Method = string(method)
+	msg.Jsonrpc = "2.0"
+	msg.Params = params
+	err = m.dataConn.WriteJSON(msg)
 
-	err = m.dataConn.WriteMessage(websocket.TextMessage, []byte(val))
+	return
+}
+
+func (m *MessageRouter) doTradeMethod(method tradeMethod, params interface{}) (err error) {
+
+	var msg Message
+	msg.Method = string(method)
+	msg.Jsonrpc = "2.0"
+	msg.Params = params
+	err = m.dataConn.WriteJSON(msg)
+
 	return
 }

@@ -54,18 +54,28 @@ const (
 
 //type WSSNotification string
 
-//WSS methods
+//WSS data methods
 const (
-	wssMthdString               = `{"method":"%v","params":%v,"id":%d}`
-	WSSMthdSubscribeTicker      = "subscribeTicker"
-	WSSMthdUnsubscribeTicker    = "unsubscribeTicker"
-	WSSMthdSubscribeOrderbook   = "subscribeOrderbook"
-	WSSMthdUnsubscribeOrderbook = "unsubscribeOrderbook"
-	WSSMthdSubscribeTrades      = "subscribeTrades"
-	WSSMthdUnsubscribeTrades    = "unsubscribeTrades"
-	WSSMthdSubscribeCandles     = "subscribeCandles"
-	WSSMthdUnsubscribeCandles   = "unsubscribeCandles"
-	WSSMthdLogin                = "login"
+	wssMthdString            dataMethod = `{"method":"%v","params":%v,"id":%d}`
+	MthdSubscribeTicker      dataMethod = "subscribeTicker"
+	MthdUnsubscribeTicker    dataMethod = "unsubscribeTicker"
+	MthdSubscribeOrderbook   dataMethod = "subscribeOrderbook"
+	MthdUnsubscribeOrderbook dataMethod = "unsubscribeOrderbook"
+	MthdSubscribeTrades      dataMethod = "subscribeTrades"
+	MthdUnsubscribeTrades    dataMethod = "unsubscribeTrades"
+	MthdSubscribeCandles     dataMethod = "subscribeCandles"
+	MthdUnsubscribeCandles   dataMethod = "unsubscribeCandles"
+)
+
+//WSS trade methods
+const (
+	MthdLogin           tradeMethod = "login"
+	MthdSubReports      tradeMethod = "subscribeReports"
+	MthdNewOrder        tradeMethod = "newOrder"
+	MthdCxlOrder        tradeMethod = "cancelOrder"
+	MthdCxlReplaceOrder tradeMethod = "cancelReplaceOrder"
+	MthdGetOrders       tradeMethod = "getOrders"
+	MthdTradingBalance  tradeMethod = "tradingBalance"
 )
 
 //Notifications
@@ -77,4 +87,5 @@ const (
 	WSSUpdateTrades      = "updateTrades"
 	WSSSnapshotCandles   = "snapshotCandles"
 	WSSUpdateCandles     = "updateCandles"
+	WSSReport            = "report"
 )

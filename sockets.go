@@ -45,13 +45,18 @@ func (m *MessageRouter) handleMarketData() {
 			if err != nil {
 				if err == websocket.ErrCloseSent {
 					logger.Warn("HitBTC", "WSS", "market data", err.Error())
+
 					time.Sleep(time.Second)
-					err = m.WSSConnectData()
-					if err != nil {
-						logger.Error("HitBTC", "WSS", "market data", err.Error())
-						time.Sleep(5 * time.Second)
+					for {
+						err = m.WSSConnectData()
+						if err != nil {
+							logger.Error("HitBTC", "WSS", "market data", err.Error())
+							time.Sleep(5 * time.Second)
+							continue
+						}
+						break
 					}
-					//handle closed connection
+
 				}
 				continue
 			}
@@ -62,7 +67,7 @@ func (m *MessageRouter) handleMarketData() {
 
 			//handle the actual message
 			method := getMktDataMethod(b)
-			if f, ok := m.getRoute(method); ok {
+			if f, ok := m.GetRoute(method); ok {
 				err = f(b)
 				if err != nil {
 					//handle the error
@@ -79,7 +84,7 @@ func (m *MessageRouter) handleMarketData() {
 func NewMessageRouter() (m *MessageRouter, err error) {
 
 	m = &MessageRouter{
-		routes:    make(map[string]func([]byte) error),
+		routes:    make(map[string]MessageRoute, 8),
 		mux:       &sync.RWMutex{},
 		dataConn:  new(websocket.Conn),
 		tradeConn: new(websocket.Conn),
@@ -106,7 +111,7 @@ func NewMessageRouter() (m *MessageRouter, err error) {
 }
 
 //AddRoute - add a MessageRoute
-func (m *MessageRouter) AddRoute(t string, f func([]byte) error) {
+func (m *MessageRouter) AddRoute(t string, f MessageRoute) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	m.routes[t] = f
@@ -119,7 +124,8 @@ func (m *MessageRouter) DeleteRoute(t string) {
 	delete(m.routes, t)
 }
 
-func (m *MessageRouter) getRoute(s string) (f func([]byte) error, ok bool) {
+//GetRoute - get the function to process a route
+func (m *MessageRouter) GetRoute(s string) (f MessageRoute, ok bool) {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 
@@ -135,10 +141,7 @@ func (m *MessageRouter) Login() (err error) {
 		PKey: os.Getenv("HITBTC_API_KEY"),
 		SKey: os.Getenv("HITBTC_SECRET_KEY"),
 	}
-	li := login{
-		Method: WSSMthdLogin,
-		Params: creds,
-	}
+
 	if encryptionAlgo == "HS256" {
 		var claims = make(jwt.MapClaims)
 		b, _ := json.Marshal(creds)
@@ -147,12 +150,7 @@ func (m *MessageRouter) Login() (err error) {
 		//		token := jwt.NewWithClaims(jwt.SigningMethodHMAC256, claims)
 	}
 
-	b, err := json.Marshal(li)
-	if err != nil {
-		return
-	}
-	err = m.tradeConn.WriteMessage(websocket.TextMessage, b)
-
+	err = m.doTradeMethod(MthdLogin, creds)
 	return
 }
 
@@ -164,4 +162,32 @@ func (m *MessageRouter) handleRequestError(b []byte) {
 		logger.Error("HitBTC", "handle err", err.Error())
 	}
 	fmt.Printf("%+v\n", err)
+}
+
+func (m *MessageRouter) LoginState() bool {
+	return m.loginState
+}
+
+func (m *MessageRouter) SendTradeMessage(msg interface{}) (err error) {
+	if !m.LoginState() {
+		return ErrLoggedOut
+	}
+	if err = m.tradeConn.WriteJSON(msg); err != nil {
+		if err == websocket.ErrCloseSent {
+			m.setLoginState(false)
+			go func() {
+				for {
+					err = m.Login()
+					if err != nil {
+						logger.Error("Hitbtc", "router", "sockets", "login", err.Error())
+						time.Sleep(5 * time.Second)
+						continue
+					}
+					return
+				}
+			}()
+		}
+	}
+
+	return
 }

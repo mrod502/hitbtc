@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 )
 
+//GetSymbols - get currently listed symbols
 func GetSymbols() (s []Symbol, err error) {
 	res, err := client.Get(URLREST + EPSymbol)
 	if err != nil {

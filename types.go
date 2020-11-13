@@ -34,6 +34,7 @@ type Order struct {
 	TradesReport  []Trade         `json:"tradesReport,omitempty"`
 }
 
+//Request - base struct for http requests
 type Request struct {
 	Method string      `json:"method,omitempty"`
 	Params interface{} `json:"params,omitempty"`
@@ -161,6 +162,7 @@ type Time struct {
 	time.Time
 }
 
+//Response - a response to an http request
 type Response struct {
 	Result  bool   `json:"result,omitempty"`
 	JSONRPC string `json:"jsonrpc,omitempty"`
@@ -170,20 +172,22 @@ type Response struct {
 
 //MessageRouter - handle wss messages
 type MessageRouter struct {
-	routes     map[string]func([]byte) error
+	routes     map[string]MessageRoute
 	mux        *sync.RWMutex
 	dataConn   *websocket.Conn
 	tradeConn  *websocket.Conn
 	loginState bool
 }
 
+//Message - idk a message
 type Message struct {
 	Jsonrpc string `json:"jsonrpc,omitempty"`
 	Method  string `json:"method,omitempty"`
+	Params  interface{}
 }
 
 //MessageRoute - handle a message of a given type
-type MessageRoute func(Message) error
+type MessageRoute func([]byte) error
 
 type login struct {
 	Method string    `json:"method,omitempty"`
@@ -197,3 +201,18 @@ type loginInfo struct {
 	Nonce     string `json:"nonce,omitempty"`
 	Signature string `json:"signature,omitempty"`
 }
+
+type Report struct {
+	Error
+	Result OrderResult
+}
+
+type OrderResult struct {
+}
+
+type TickerSubscription struct {
+	Symbol string `json:"symbol,omitempty"`
+}
+
+type dataMethod string
+type tradeMethod string
