@@ -2,10 +2,8 @@ package hitbtc
 
 import (
 	"net/http"
-	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/shopspring/decimal"
 )
 
@@ -168,15 +166,6 @@ type Response struct {
 	JSONRPC string `json:"jsonrpc,omitempty"`
 	ID      uint64 `json:"id,omitempty"`
 	Error   Error  `json:"error,omitempty"`
-}
-
-//MessageRouter - handle wss messages
-type MessageRouter struct {
-	routes     map[string]MessageRoute
-	mux        *sync.RWMutex
-	dataConn   *websocket.Conn
-	tradeConn  *websocket.Conn
-	loginState bool
 }
 
 //Message - idk a message

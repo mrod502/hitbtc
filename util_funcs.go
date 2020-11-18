@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/mrod502/logger"
+	"github.com/mrod502/util"
 )
 
 var (
@@ -37,30 +38,6 @@ func getMktDataMethod(b []byte) string {
 	return string(res[1])
 }
 
-func (m *MessageRouter) loginStateManager() {}
-
-func (m *MessageRouter) setLoginState(l bool) {
-	m.mux.Lock()
-	m.loginState = l
-	m.mux.Unlock()
-}
-
-/*
-func randomNonceString() string {
-	length := 16
-	var seededRand *rand.Rand = rand.New(
-		rand.NewSource(time.Now().UnixNano()),
-	)
-	seededRand.Uint32()
-	b := ""
-	for i := 0; i < length; i++ {
-		b += string(seededRand.Intn(137))
-	}
-	hmac.New(crypto.SHA256.New, []byte(b))
-	return b
-
-}
-*/
 func echoTicker(b []byte) error {
 	var t struct {
 		Params Ticker
@@ -109,5 +86,23 @@ func (m *MessageRouter) doTradeMethod(method tradeMethod, params interface{}) (e
 	msg.Params = params
 	err = m.dataConn.WriteJSON(msg)
 
+	return
+}
+
+func (m *MessageRouter) GetMthd(i uint64) (o string) {
+	s := util.Base36(int64(i))
+	var ok bool
+	if o, ok = m.messageIDs.Get(s).(string); !ok {
+		return ""
+	}
+	return o
+}
+
+func (m *MessageRouter) SetMthd(k uint64, v string) {
+	m.messageIDs.Set(util.Base36(int64(k)), v)
+}
+
+func (m *MessageRouter) SubReports() (err error) {
+	err = m.doTradeMethod(MthdSubReports, struct{}{})
 	return
 }

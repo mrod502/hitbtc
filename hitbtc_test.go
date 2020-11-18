@@ -50,4 +50,11 @@ func TestGetMethod(t *testing.T) {
 	fmt.Println(getMktDataMethod(testData1))
 
 	fmt.Println(getMktDataMethod(testData2))
+	v, ok := getMsgID(testData1)
+	fmt.Println(v, ok)
+}
+
+func TestHash(t *testing.T) {
+	x := string(int32(2 << 28))
+	fmt.Println(x)
 }
