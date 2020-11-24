@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -25,6 +24,7 @@ type MessageRouter struct {
 	messageIDs           *util.Store
 	dataConnectionState  bool
 	tradeConnectionState bool
+	TradeSignals         chan Order
 }
 
 //WSSConnectData - setup underlying WSS connection for streaming market data
@@ -210,13 +210,13 @@ func (m *MessageRouter) tradeConnectionHandler() {
 			}
 			continue
 		}
-		if bytes.Contains(b, []byte(`"error"`)) {
+		if isError(b) {
 			m.handleRequestError(b)
 			continue
 		}
 
 		//handle the actual message
-		method := getMktDataMethod(b)
+		method, _ := m.getTradeMethod(b)
 		if f, ok := m.GetRoute(method); ok {
 			err = f(b)
 			if err != nil {
@@ -245,20 +245,22 @@ func (m *MessageRouter) setDataConnectionState(b bool) {
 func getMsgID(b []byte) (i string, ok bool) {
 	fmt.Println(string(b))
 	res := ptnMsgID.FindSubmatch(b)
-	if len(res) == 0 {
-
+	if len(res) < 2 {
 		return "", false
 	}
-	fmt.Println("res", string(res[0]), string(res[1]))
-	s := string(res[1])
-	fmt.Println("s", s)
-	v, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	i = util.Base36(v)
+	i = string(res[1])
 
 	return i, true
+}
+func (m *MessageRouter) getTradeMethod(b []byte) (method, msgID string) {
+	var found, ok bool
+	if msgID, found = getMsgID(b); found {
+		if method, ok = m.messageIDs.Get(msgID).(string); ok {
+			return
+		}
+		method = getTradeMethod(b)
+	}
+
+	return
 }

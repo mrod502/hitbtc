@@ -9,7 +9,7 @@ import (
 
 var client = http.DefaultClient
 
-//-------------------Action-------------------//
+//----------------------------Action----------------------------//
 
 //Order - an order
 type Order struct {
@@ -18,8 +18,8 @@ type Order struct {
 	Symbol        string          `json:"symbol,omitempty"`
 	Side          string          `json:"side,omitempty"`
 	Status        string          `json:"status,omitempty"`
-	Type          string          `json:"type,omitempty"`
-	TimeInForce   string          `json:"timeInForce,omitempty"`
+	Type          orderType       `json:"type,omitempty"`
+	TimeInForce   timeInForce     `json:"timeInForce,omitempty"`
 	Quantity      decimal.Decimal `json:"quantity,omitempty"`
 	Price         decimal.Decimal `json:"price,omitempty"`
 	AvgPrice      decimal.Decimal `json:"avgPrice,omitempty"`
@@ -38,7 +38,7 @@ type Request struct {
 	Params interface{} `json:"params,omitempty"`
 }
 
-//--------------------Data--------------------//
+//------------------------------Data------------------------------//
 
 //Pagination options
 type Pagination struct {
@@ -170,9 +170,9 @@ type Response struct {
 
 //Message - idk a message
 type Message struct {
-	Jsonrpc string `json:"jsonrpc,omitempty"`
-	Method  string `json:"method,omitempty"`
-	Params  interface{}
+	Jsonrpc string      `json:"jsonrpc,omitempty"`
+	Method  string      `json:"method,omitempty"`
+	Params  interface{} `json:"params"`
 }
 
 //MessageRoute - handle a message of a given type
@@ -191,17 +191,18 @@ type loginInfo struct {
 	Signature string `json:"signature,omitempty"`
 }
 
-type Report struct {
-	Error
-	Result OrderResult
-}
-
+//OrderResult - order in result
 type OrderResult struct {
+	Result Order
 }
 
+//TickerSubscription - struct for subscribing to ticker
 type TickerSubscription struct {
 	Symbol string `json:"symbol,omitempty"`
 }
 
 type dataMethod string
 type tradeMethod string
+type orderType string
+type timeInForce string
+type reportReason string

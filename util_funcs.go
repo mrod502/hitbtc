@@ -1,13 +1,13 @@
 package hitbtc
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/gorilla/websocket"
 	"github.com/mrod502/logger"
-	"github.com/mrod502/util"
 )
 
 var (
@@ -90,19 +90,38 @@ func (m *MessageRouter) doTradeMethod(method tradeMethod, params interface{}) (e
 }
 
 func (m *MessageRouter) GetMthd(i uint64) (o string) {
-	s := util.Base36(int64(i))
+
 	var ok bool
-	if o, ok = m.messageIDs.Get(s).(string); !ok {
+	if o, ok = m.messageIDs.Get(fmt.Sprintf("%d", i)).(string); !ok {
 		return ""
 	}
 	return o
 }
 
 func (m *MessageRouter) SetMthd(k uint64, v string) {
-	m.messageIDs.Set(util.Base36(int64(k)), v)
+	m.messageIDs.Set(fmt.Sprintf("%d", k), v)
 }
 
 func (m *MessageRouter) SubReports() (err error) {
 	err = m.doTradeMethod(MthdSubReports, struct{}{})
 	return
+}
+
+func isError(b []byte) bool {
+	return bytes.Contains(b, []byte(`"error"`))
+}
+
+func getTradeMethod(b []byte) string {
+	matches := ptnWsMethod.FindSubmatch(b)
+
+	if len(matches) < 2 {
+		if bytes.Contains(b, []byte(`"clientOrderId"`)) {
+			if bytes.Contains(b, []byte(`"result"`)) {
+				return "newOrder"
+			}
+		}
+		return ""
+	}
+	found := string(matches[1])
+	return found
 }

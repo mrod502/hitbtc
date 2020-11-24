@@ -88,4 +88,37 @@ const (
 	WSSSnapshotCandles   = "snapshotCandles"
 	WSSUpdateCandles     = "updateCandles"
 	WSSReport            = "report"
+	WSSActiveOrders      = "activeOrders"
+)
+
+//report reasons
+const (
+	RStatus             reportReason = "status"
+	RCreated            reportReason = "created"
+	RUpdated            reportReason = "updated"
+	RMarginChanged      reportReason = "marginChanged"
+	ROpenTrade          reportReason = "openTrade"
+	ReportCloseTrade    reportReason = "closeTrade"
+	ReportFlipTrade     reportReason = "flipTrade"
+	ReportClosed        reportReason = "closed"
+	ReportReopened      reportReason = "reopened"
+	ReportLiquidated    reportReason = "liquidated"
+	ReportInterestTaken reportReason = "interestTaken"
+)
+
+//order types
+const (
+	OTLimit      orderType = "limit"
+	OTMarket     orderType = "market"
+	OTStopLimit  orderType = "stopLimit"
+	OTStopMarket orderType = "stopMarket"
+)
+
+//TimeInForce
+const (
+	TIFGoodTillCancel    timeInForce = "GTC"
+	TIFImmediateOrCancel timeInForce = "IOC"
+	TIFFillOrKill        timeInForce = "FOK"
+	TIFDay               timeInForce = "Day"
+	TIFDate              timeInForce = "GTD"
 )

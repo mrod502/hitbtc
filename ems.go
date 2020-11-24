@@ -1,17 +1,17 @@
 package hitbtc
 
 import (
-	"encoding/json"
-
 	"github.com/mrod502/util"
 	"github.com/shopspring/decimal"
 )
 
 //EMS - trading session manager for an HitBTC socket trading session
 type EMS struct {
-	openPositions *util.Store
-	openOrders    *util.Store
-	router        *MessageRouter
+	openPositions    *util.Store
+	openOrders       *util.Store
+	router           *MessageRouter
+	tradingBalance   *util.Store
+	availableSymbols *util.Store
 }
 
 //PortfolioValue - return total portfolio value in USD
@@ -28,8 +28,10 @@ func (e EMS) AvailableCash() decimal.Decimal {
 //NewEMS - return an initialized EMS
 func NewEMS(m *MessageRouter) (e *EMS) {
 	e = &EMS{openPositions: util.NewStore(),
-		openOrders: util.NewStore(),
-		router:     m}
+		openOrders:       util.NewStore(),
+		tradingBalance:   util.NewStore(),
+		availableSymbols: util.NewStore(),
+		router:           m}
 	return
 }
 
@@ -58,16 +60,32 @@ func (e EMS) OpenMarketValue() (d decimal.Decimal) {
 
 //Start - setup an EMS and start trading session
 func (e *EMS) Start() (err error) {
+
 	//stand up websocket trading connection
 	// ask for open positions
 
 	return
 }
 
-func processReport(b []byte) (err error) {
-	var m struct {
-		Params Report
+//TradingBalance - get value in USD of all open positions
+func (e EMS) TradingBalance() (d decimal.Decimal) {
+	for _, k := range e.openPositions.GetKeys() {
+		pos, ok := e.openPositions.Get(k).(util.Position)
+		if !ok {
+			continue
+		}
+		d = d.Add(pos.Qty.Mul(pos.BuyPx)) // estimate
 	}
-	err = json.Unmarshal(b, &m)
+	return
+}
+
+func (e *EMS) GetAvailableSymbols() (err error) {
+	s, err := GetSymbols()
+	if err != nil {
+		return
+	}
+	for _, v := range s {
+		e.availableSymbols.Set(v.ID, true)
+	}
 	return
 }
