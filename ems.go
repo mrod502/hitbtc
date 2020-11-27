@@ -1,6 +1,7 @@
 package hitbtc
 
 import (
+	"github.com/mrod502/logger"
 	"github.com/mrod502/util"
 	"github.com/shopspring/decimal"
 )
@@ -15,13 +16,22 @@ type EMS struct {
 }
 
 //PortfolioValue - return total portfolio value in USD
-func (e EMS) PortfolioValue() decimal.Decimal {
-	//get open market value + available cash
-	return decimal.New(0, 0)
-}
+func (e EMS) PortfolioValue() (d decimal.Decimal) {
+	d = decimal.New(0, 0)
 
-//AvailableCash - return available cash for trading
-func (e EMS) AvailableCash() decimal.Decimal {
+	for _, v := range e.openPositions.GetKeys() {
+		p, ok := e.openPositions.Get(v).(util.Position)
+		if !ok {
+			logger.Error("Bespin", "Portfolio value", "Wrong type in openPositions")
+			continue
+		}
+		if p.Short {
+			d.Add(p.SellPx.Mul(p.Qty).Abs())
+		} else {
+			d.Add(p.BuyPx.Mul(p.Qty))
+		}
+	}
+	//get open market value + available cash
 	return decimal.New(0, 0)
 }
 
@@ -67,25 +77,20 @@ func (e *EMS) Start() (err error) {
 	return
 }
 
-//TradingBalance - get value in USD of all open positions
-func (e EMS) TradingBalance() (d decimal.Decimal) {
-	for _, k := range e.openPositions.GetKeys() {
-		pos, ok := e.openPositions.Get(k).(util.Position)
-		if !ok {
-			continue
-		}
-		d = d.Add(pos.Qty.Mul(pos.BuyPx)) // estimate
-	}
+//TradingBalance - get balance of all funds
+func (e EMS) TradingBalance() (tb map[string]decimal.Decimal) {
+
 	return
 }
 
+//GetAvailableSymbols - get symbols available for ticker subscription
 func (e *EMS) GetAvailableSymbols() (err error) {
 	s, err := GetSymbols()
 	if err != nil {
 		return
 	}
 	for _, v := range s {
-		e.availableSymbols.Set(v.ID, true)
+		e.availableSymbols.Set(v.ID, v)
 	}
 	return
 }

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <h1>Directory</h1>
+        <ul>
+            <li><a href="/symbols">Symbols</a></li>
+            <li><a href="/">Home</a></li>
+        </ul>
+        <h2>Positions</h2>
+            <div id='positions-table-wrapper'>
+                <table id='positions-table'>
+                    <tbody>
+                        <thead>
+                            <tr><th>Symbol</th></tr>
+                        </thead>
+                        {{range .}}<tr><td>{{.ID}}</td></tr>{{end}}
+                    </tbody>
+                </table>
+            </div>
+    </body>
+</html>

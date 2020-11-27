@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/mrod502/logger"
 	"github.com/mrod502/util"
@@ -25,6 +26,7 @@ type MessageRouter struct {
 	dataConnectionState  bool
 	tradeConnectionState bool
 	TradeSignals         chan Order
+	server               *mux.Router
 }
 
 //WSSConnectData - setup underlying WSS connection for streaming market data
@@ -93,6 +95,7 @@ func NewMessageRouter() (m *MessageRouter, err error) {
 		mux:       &sync.RWMutex{},
 		dataConn:  new(websocket.Conn),
 		tradeConn: new(websocket.Conn),
+		server:    mux.NewRouter(),
 	}
 	if os.Getenv("HITBTC_WSS_TRADES") == "Y" {
 		err = m.WSSConnectTrade()
