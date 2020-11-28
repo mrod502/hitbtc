@@ -52,19 +52,18 @@ func (m *MessageRouter) handleMarketData() {
 		for {
 			_, b, err := m.dataConn.ReadMessage()
 			if err != nil {
-				if err == websocket.ErrCloseSent {
-					logger.Warn("HitBTC", "WSS", "market data", err.Error())
-					time.Sleep(time.Second)
-					for {
-						err = m.WSSConnectData()
-						if err != nil {
-							logger.Error("HitBTC", "WSS", "market data", err.Error())
-							time.Sleep(5 * time.Second)
-							continue
-						}
-						break
+				logger.Warn("HitBTC", "WSS", "market data", err.Error())
+				time.Sleep(time.Second)
+				for {
+					err = m.WSSConnectData()
+					if err != nil {
+						logger.Error("HitBTC", "WSS", "market data", err.Error())
+						time.Sleep(3 * time.Second)
+						continue
 					}
+					break
 				}
+
 				continue
 			}
 			if bytes.Contains(b, []byte(`"error"`)) {
