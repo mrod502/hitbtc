@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mrod502/util"
 	"github.com/shopspring/decimal"
 )
 
@@ -51,5 +52,5 @@ func (t Ticker) ID() []byte {
 
 //Type - implement indexer
 func (t Ticker) Type() []byte {
-	return []byte("tkr")
+	return []byte(string(util.TblHBTCTicker))
 }

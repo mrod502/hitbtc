@@ -84,8 +84,8 @@ func (e EMS) TradingBalance() (tb map[string]decimal.Decimal) {
 }
 
 //GetAvailableSymbols - get symbols available for ticker subscription
-func (e *EMS) GetAvailableSymbols() (err error) {
-	s, err := GetSymbols()
+func (e *EMS) GetAvailableSymbols() (s []Symbol, err error) {
+	s, err = GetSymbols()
 	if err != nil {
 		return
 	}
