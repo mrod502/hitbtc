@@ -13,7 +13,7 @@ func GetSymbols() (s []Symbol, err error) {
 		return
 	}
 	b, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(b))
+
 	if err != nil {
 		return
 	}
