@@ -89,6 +89,7 @@ type Symbol struct {
 
 //Ticker obj
 type Ticker struct {
+	TickerID    string
 	Symbol      string          `json:"symbol,omitempty"`
 	Ask         decimal.Decimal `json:"ask,omitempty"`
 	Bid         decimal.Decimal `json:"bid,omitempty"`
@@ -98,7 +99,7 @@ type Ticker struct {
 	High        decimal.Decimal `json:"high,omitempty"`
 	Volume      decimal.Decimal `json:"volume,omitempty"`
 	VolumeQuote decimal.Decimal `json:"volumeQuote,omitempty"`
-	Timestamp   string          `json:"timestamp,omitempty"`
+	Timestamp   time.Time       `json:"timestamp,omitempty"`
 }
 
 //Candle - candle data

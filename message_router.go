@@ -34,7 +34,6 @@ func (m *MessageRouter) WSSConnectData() (err error) {
 	logger.Info("HitBTC", "marketData", "connecting marketdata source")
 	var ws = new(websocket.Conn)
 	ws, _, err = dialer.Dial(getWsURL(), http.Header{})
-
 	m.dataConn = ws
 	return
 }
@@ -47,43 +46,33 @@ func (m *MessageRouter) WSSConnectTrade() (err error) {
 	return
 }
 
-func (m *MessageRouter) handleMarketData() {
-	go func() {
-		for {
-			_, b, err := m.dataConn.ReadMessage()
-			if err != nil {
-				logger.Warn("HitBTC", "WSS", "market data", err.Error())
-				time.Sleep(time.Second)
-				for {
-					err = m.WSSConnectData()
-					if err != nil {
-						logger.Error("HitBTC", "WSS", "market data", err.Error())
-						time.Sleep(3 * time.Second)
-						continue
-					}
-					break
-				}
+func (m *MessageRouter) handleMarketData() (err error) {
 
-				continue
-			}
-			if bytes.Contains(b, []byte(`"error"`)) {
-				m.handleRequestError(b)
-				continue
-			}
-
-			//handle the actual message
-			method := getMktDataMethod(b)
-			if f, ok := m.GetRoute(method); ok {
-				err = f(b)
-				if err != nil {
-					//handle the error
-				}
-			} else {
-				logger.Warn("HitBTC", "router", "route not found", method)
-			}
-
+	for {
+		var b []byte
+		_, b, err = m.dataConn.ReadMessage()
+		if err != nil {
+			return
 		}
-	}()
+
+		if bytes.Contains(b, []byte(`"error"`)) {
+			m.handleRequestError(b)
+			continue
+		}
+
+		//handle the actual message
+		method := getMktDataMethod(b)
+		if f, ok := m.GetRoute(method); ok {
+			err = f(b)
+			if err != nil {
+				//handle the error
+			}
+		} else {
+			logger.Warn("HitBTC", "router", "route not found", method)
+		}
+
+	}
+
 }
 
 //NewMessageRouter - return an initialized messageRouter
@@ -110,7 +99,17 @@ func NewMessageRouter() (m *MessageRouter, err error) {
 		if err != nil {
 			panic(err)
 		}
-		m.handleMarketData()
+		go func() {
+			for {
+				err := m.handleMarketData()
+				if err != nil {
+					logger.Error("WSSData", err.Error())
+				}
+				for err := m.WSSConnectTrade(); err != nil; {
+					logger.Error("WSSData", err.Error())
+				}
+			}
+		}()
 	}
 	if err != nil {
 		return

@@ -58,3 +58,24 @@ func TestHash(t *testing.T) {
 	x := string(int32(2 << 28))
 	fmt.Println(x)
 }
+
+func TestTickerUnmarshal(t *testing.T) {
+	b := []byte(`{"jsonrpc":"2.0","method":"ticker","params":{"ask":"0.030383","bid":"0.030378","last":"0.030384","open":"0.030805","low":"0.030197","high":"0.030858","volume":"35055.9896","volumeQuote":"1069.5732114774","timestamp":"2020-12-11T17:41:52.976Z","symbol":"ETHBTC"}}`)
+	var s = struct {
+		Params Ticker
+	}{}
+	var toc time.Duration
+	var err error
+	tic := time.Now()
+	for i := 0; i < 1000; i++ {
+		s = struct{ Params Ticker }{}
+		err = json.Unmarshal(b, &s)
+	}
+	toc = time.Since(tic)
+	fmt.Println(toc / 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", s.Params)
+	fmt.Println([]byte(s.Params.TickerID))
+}
