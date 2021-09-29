@@ -1,0 +1,151 @@
+package hitbtc
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"regexp"
+	"time"
+
+	"github.com/gorilla/websocket"
+	gocache "github.com/mrod502/go-cache"
+	"go.uber.org/atomic"
+)
+
+var chRegex = regexp.MustCompile(`"ch":"([^"]+)"`)
+
+type MessageChannelHandler func([]byte) error
+
+func defaultHandler(b []byte) error { return errors.New("func not found") }
+
+type MessageBase struct {
+	Ch string `json:"ch"`
+}
+
+func (c *Client) GetHandler(ch string) MessageChannelHandler {
+
+	v, ok := c.handlers.Get(ch).(func([]byte) error)
+	if !ok {
+		fmt.Printf("ftype:%+T\n", c.handlers.Get(ch))
+		return defaultHandler
+	}
+	return v
+}
+func (c *Client) handleOrderbookFull(b []byte) error {
+	var v OrderbookMessage
+
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		fmt.Println("LOG", err.Error())
+	}
+	c.book.Update(v)
+	return err
+}
+
+func NewClient() (cli *Client, err error) {
+
+	cli = &Client{
+		prices:    gocache.NewInterfaceCache(),
+		messageId: atomic.NewUint64(0),
+		msgIn:     make(chan []byte, 128),
+		handlers:  gocache.NewInterfaceCache(),
+		book:      NewOrderBook(),
+	}
+	cli.handlers.Set("orderbook/full", cli.handleOrderbookFull)
+
+	go func() {
+		for {
+			msg := <-cli.msgIn
+			ch := chRegex.FindSubmatch(msg)
+			if len(ch) > 0 {
+				f := cli.GetHandler(string(ch[1]))
+				f(msg)
+			} else {
+				fmt.Println("ERROR:", string(msg))
+			}
+		}
+
+	}()
+	return cli, cli.Connect()
+
+}
+
+type Client struct {
+	prices    *gocache.InterfaceCache
+	messageId *atomic.Uint64
+	ws        *websocket.Conn
+	msgIn     chan []byte
+	handlers  *gocache.InterfaceCache
+	book      *OrderBook
+}
+
+func (c *Client) AddOrderBookStream(s ...string) error {
+
+	req := c.buildSubReq(s...)
+	b, _ := json.Marshal(req)
+
+	return c.ws.WriteMessage(websocket.TextMessage, b)
+}
+
+type ReqParams struct {
+	Symbols []string `json:"symbols,omitempty"`
+}
+
+type SubscribeReq struct {
+	Method string    `json:"method,omitempty"`
+	Ch     string    `json:"ch,omitempty"`
+	Params ReqParams `json:"params,omitempty"`
+	Id     uint64    `json:"id"`
+}
+
+func (c *Client) buildSubReq(s ...string) SubscribeReq {
+	defer c.messageId.Inc()
+	return SubscribeReq{
+		Method: "subscribe",
+		Ch:     "orderbook/full",
+		Params: ReqParams{
+			Symbols: s,
+		},
+		Id: c.messageId.Load(),
+	}
+}
+
+func (c *Client) Connect() error {
+	h := make(http.Header)
+
+	dialer := &websocket.Dialer{
+		ReadBufferSize:   1024,
+		WriteBufferSize:  1024,
+		HandshakeTimeout: 30 * time.Second,
+	}
+	conn, _, err := dialer.Dial(`wss://api.hitbtc.com/api/3/ws/public`, h)
+	c.ws = conn
+	go func() {
+		for {
+			_, v, _ := conn.ReadMessage()
+			if err != nil {
+				fmt.Println(err)
+				if err == websocket.ErrCloseSent {
+					c.reconnect()
+					continue
+				}
+
+			}
+			c.msgIn <- v
+		}
+	}()
+	return err
+}
+
+func (c *Client) reconnect() {
+	for {
+		conn, _, err := dialer.Dial(`wss://api.hitbtc.com/api/3/ws/public`, nil)
+		if err == nil {
+			c.ws = conn
+			return
+		}
+		fmt.Println(err)
+		time.Sleep(5 * time.Second)
+	}
+}
