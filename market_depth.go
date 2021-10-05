@@ -49,9 +49,9 @@ func NewMarketDepth() *MarketDepth {
 
 func (m *MarketDepth) Update(b BookPage) {
 	for _, v := range b.Ask {
-		m.bids.set(v.Price, v)
+		m.bids.update(v.Price, v)
 	}
 	for _, v := range b.Bid {
-		m.bids.set(-v.Price, v)
+		m.bids.update(-v.Price, v)
 	}
 }

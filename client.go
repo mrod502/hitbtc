@@ -27,7 +27,6 @@ func (c *Client) GetHandler(ch string) MessageChannelHandler {
 
 	v, ok := c.handlers.Get(ch).(func([]byte) error)
 	if !ok {
-		fmt.Printf("ftype:%+T\n", c.handlers.Get(ch))
 		return defaultHandler
 	}
 	return v
@@ -37,7 +36,6 @@ func (c *Client) handleOrderbookFull(b []byte) error {
 
 	err := json.Unmarshal(b, &v)
 	if err != nil {
-		fmt.Println("LOG", err.Error())
 	}
 	c.book.Update(v)
 	return err
@@ -61,8 +59,6 @@ func NewClient() (cli *Client, err error) {
 			if len(ch) > 0 {
 				f := cli.GetHandler(string(ch[1]))
 				f(msg)
-			} else {
-				fmt.Println("ERROR:", string(msg))
 			}
 		}
 
@@ -125,7 +121,6 @@ func (c *Client) Connect() error {
 		for {
 			_, v, _ := conn.ReadMessage()
 			if err != nil {
-				fmt.Println(err)
 				if err == websocket.ErrCloseSent {
 					c.reconnect()
 					continue
@@ -151,7 +146,6 @@ func (c *Client) reconnect() {
 }
 
 func (c *Client) AddListener(symbol string, handler func(*MarketDepth) error) {
-	return
 	go func() {
 		for {
 			handler(<-c.book.Subscribe(symbol))

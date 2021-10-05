@@ -29,18 +29,20 @@ func (o *OrderBook) getSub(s string) (c chan *MarketDepth, err error) {
 func (o *OrderBook) updater() {
 	for {
 		msg := <-o.msg
-		fmt.Println(msg.Update["ETHUSDT"].Ask)
+		fmt.Println(len(msg.Update), len(msg.Snapshot))
 
 		for k, v := range msg.Update {
-			if md, ok := o.symbols.Get(k).(*MarketDepth); ok {
+
+			if o.symbols.Exists(k) {
+				md := o.symbols.Get(k).(*MarketDepth)
 				md.Update(v)
 				bd, ak := md.Values()
 				fmt.Printf("%+v\t%+v\n", bd, ak)
 			} else {
-				md := NewMarketDepth()
-				md.Update(v)
-				o.symbols.Set(k, md)
-				bd, ak := md.Values()
+				mdOther := NewMarketDepth()
+				mdOther.Update(v)
+				o.symbols.Set(k, mdOther)
+				bd, ak := mdOther.Values()
 				fmt.Printf("%+v\t%+v\n", bd, ak)
 			}
 		}
@@ -57,6 +59,7 @@ func (o *OrderBook) Snapshot(m OrderbookMessage) {
 }
 
 func (o *OrderBook) Update(m OrderbookMessage) {
+	fmt.Println("Call Update", len(o.msg))
 	o.msg <- m
 }
 

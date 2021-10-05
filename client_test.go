@@ -23,11 +23,11 @@ func TestClient(t *testing.T) {
 		fmt.Printf("BTC:%+v,%+v\n", bid, ask)
 		return nil
 	})
-	err = cli.AddOrderBookStream("ETHUSDT")
+	err = cli.AddOrderBookStream("ETHUSDT", "BTCUSDT")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	time.Sleep(100 * time.Second)
+	time.Sleep(10 * time.Second)
 
 }

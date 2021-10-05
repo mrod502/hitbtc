@@ -1,6 +1,8 @@
 package hitbtc
 
-import "sync"
+import (
+	"sync"
+)
 
 type quoteMap struct {
 	v map[float64]Quote
@@ -21,13 +23,19 @@ func (q *quoteMap) min() (Quote, error) {
 	return Quote{}, ErrNoQuotes
 }
 
-func (q *quoteMap) set(k float64, v Quote) {
+func (q *quoteMap) update(k float64, v Quote) {
 	q.m.Lock()
 	defer q.m.Unlock()
 	if v.Volume == 0 {
 		delete(q.v, v.Price)
 		return
 	}
+	q.v[v.Price] = v
+}
+
+func (q *quoteMap) set(k float64, v Quote) {
+	q.m.Lock()
+	defer q.m.Unlock()
 	q.v[v.Price] = v
 }
 
