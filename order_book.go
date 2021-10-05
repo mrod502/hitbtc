@@ -1,26 +1,59 @@
 package hitbtc
 
 import (
+	"fmt"
+
 	gocache "github.com/mrod502/go-cache"
 )
 
 type OrderBook struct {
 	symbols *gocache.InterfaceCache
 	msg     chan OrderbookMessage
+	subs    *gocache.InterfaceCache
+}
+
+func (o *OrderBook) Subscribe(symbol string) (c chan *MarketDepth) {
+	c = make(chan *MarketDepth, 128)
+	o.subs.Set(symbol, c)
+	return
+}
+
+func (o *OrderBook) getSub(s string) (c chan *MarketDepth, err error) {
+	v, ok := o.subs.Get(s).(chan *MarketDepth)
+	if !ok {
+		return nil, gocache.ErrInterfaceAssertion
+	}
+	return v, nil
 }
 
 func (o *OrderBook) updater() {
 	for {
 		msg := <-o.msg
+		fmt.Println(msg.Update["ETHUSDT"].Ask)
 
 		for k, v := range msg.Update {
-			o.symbols.Set(k, v)
+			if md, ok := o.symbols.Get(k).(*MarketDepth); ok {
+				md.Update(v)
+				bd, ak := md.Values()
+				fmt.Printf("%+v\t%+v\n", bd, ak)
+			} else {
+				md := NewMarketDepth()
+				md.Update(v)
+				o.symbols.Set(k, md)
+				bd, ak := md.Values()
+				fmt.Printf("%+v\t%+v\n", bd, ak)
+			}
 		}
+
 	}
 }
 
 func (o *OrderBook) Snapshot(m OrderbookMessage) {
-
+	for k, v := range m.Snapshot {
+		md := NewMarketDepth()
+		md.Update(v)
+		o.symbols.Set(k, md)
+	}
 }
 
 func (o *OrderBook) Update(m OrderbookMessage) {
@@ -31,6 +64,7 @@ func NewOrderBook() *OrderBook {
 	var o = &OrderBook{
 		symbols: gocache.NewInterfaceCache(),
 		msg:     make(chan OrderbookMessage, 1024),
+		subs:    gocache.NewInterfaceCache(),
 	}
 	go o.updater()
 	return o

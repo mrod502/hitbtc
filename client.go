@@ -149,3 +149,12 @@ func (c *Client) reconnect() {
 		time.Sleep(5 * time.Second)
 	}
 }
+
+func (c *Client) AddListener(symbol string, handler func(*MarketDepth) error) {
+	return
+	go func() {
+		for {
+			handler(<-c.book.Subscribe(symbol))
+		}
+	}()
+}
