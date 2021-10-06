@@ -61,10 +61,8 @@ func NewClient() (cli *Client, err error) {
 				f(msg)
 			}
 		}
-
 	}()
 	return cli, cli.Connect()
-
 }
 
 type Client struct {

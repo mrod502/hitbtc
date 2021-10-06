@@ -2,6 +2,7 @@ package hitbtc
 
 import (
 	"errors"
+	"fmt"
 
 	"go.uber.org/atomic"
 )
@@ -11,9 +12,14 @@ var (
 )
 
 type MarketDepth struct {
-	lastSeqNum *atomic.Uint32
+	lastSeqNum *atomic.Uint64
 	bids       *quoteMap
 	asks       *quoteMap
+	lastChange BookPage
+}
+
+func (m MarketDepth) LastChange() BookPage {
+	return m.lastChange
 }
 
 func (m MarketDepth) HighestBid() (Quote, error) {
@@ -43,15 +49,20 @@ func NewMarketDepth() *MarketDepth {
 	return &MarketDepth{
 		bids:       newQuoteMap(),
 		asks:       newQuoteMap(),
-		lastSeqNum: atomic.NewUint32(0),
+		lastSeqNum: atomic.NewUint64(0),
 	}
 }
 
-func (m *MarketDepth) Update(b BookPage) {
+func (m *MarketDepth) Update(b BookPage) error {
+	if b.SeqNum < m.lastSeqNum.Load() {
+		return fmt.Errorf("seqNum of incoming update (%d) is lower than last (%d)", b.SeqNum, m.lastSeqNum.Load())
+	}
+	m.lastChange = b
 	for _, v := range b.Ask {
 		m.bids.update(v.Price, v)
 	}
 	for _, v := range b.Bid {
 		m.bids.update(-v.Price, v)
 	}
+	return nil
 }
