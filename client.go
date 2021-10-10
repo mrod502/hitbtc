@@ -75,8 +75,16 @@ type Client struct {
 }
 
 func (c *Client) AddOrderBookStream(s ...string) error {
-
-	req := c.buildSubReq(s...)
+	var symbols = make([]string, 0, len(s))
+	for _, v := range s {
+		if !c.book.symbols.Exists(v) {
+			symbols = append(symbols, v)
+		}
+	}
+	if len(symbols) == 0 {
+		return fmt.Errorf("already subscribed to all requested symbols (%v)", s)
+	}
+	req := c.buildSubReq(symbols...)
 	b, _ := json.Marshal(req)
 
 	return c.ws.WriteMessage(websocket.TextMessage, b)
@@ -97,6 +105,18 @@ func (c *Client) buildSubReq(s ...string) SubscribeReq {
 	defer c.messageId.Inc()
 	return SubscribeReq{
 		Method: "subscribe",
+		Ch:     "orderbook/full",
+		Params: ReqParams{
+			Symbols: s,
+		},
+		Id: c.messageId.Load(),
+	}
+}
+
+func (c *Client) buildUnsubReq(s ...string) SubscribeReq {
+	defer c.messageId.Inc()
+	return SubscribeReq{
+		Method: "unsubscribe",
 		Ch:     "orderbook/full",
 		Params: ReqParams{
 			Symbols: s,
@@ -141,6 +161,15 @@ func (c *Client) reconnect() {
 		fmt.Println(err)
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func (c *Client) RemoveOrderBookStream(s ...string) error {
+	req := c.buildUnsubReq(s...)
+	b, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+	return c.ws.WriteMessage(websocket.TextMessage, b)
 }
 
 func (c *Client) AddListener(symbol string, handler func(*MarketDepth) error) {

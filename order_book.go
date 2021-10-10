@@ -1,8 +1,6 @@
 package hitbtc
 
 import (
-	"fmt"
-
 	gocache "github.com/mrod502/go-cache"
 )
 
@@ -51,7 +49,6 @@ func (o *OrderBook) Snapshot(m OrderbookMessage) {
 }
 
 func (o *OrderBook) Update(m OrderbookMessage) {
-	fmt.Println("Call Update", len(o.msg))
 	o.msg <- m
 }
 
