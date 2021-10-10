@@ -36,8 +36,12 @@ func (c *Client) handleOrderbookFull(b []byte) error {
 
 	err := json.Unmarshal(b, &v)
 	if err != nil {
+		return err
 	}
 	c.book.Update(v)
+	if c.bookMessageHandler != nil {
+		c.bookMessageHandler(v)
+	}
 	return err
 }
 
@@ -66,12 +70,13 @@ func NewClient() (cli *Client, err error) {
 }
 
 type Client struct {
-	prices    *gocache.InterfaceCache
-	messageId *atomic.Uint64
-	ws        *websocket.Conn
-	msgIn     chan []byte
-	handlers  *gocache.InterfaceCache
-	book      *OrderBook
+	prices             *gocache.InterfaceCache
+	messageId          *atomic.Uint64
+	ws                 *websocket.Conn
+	msgIn              chan []byte
+	handlers           *gocache.InterfaceCache
+	book               *OrderBook
+	bookMessageHandler func(OrderbookMessage)
 }
 
 func (c *Client) AddOrderBookStream(s ...string) error {
@@ -179,4 +184,8 @@ func (c *Client) AddListener(symbol string, handler func(*MarketDepth) error) {
 			handler(<-c.book.Subscribe(symbol))
 		}
 	}()
+}
+
+func (c *Client) AddOrderBookDispatcher(f func(OrderbookMessage)) {
+	c.bookMessageHandler = f
 }
