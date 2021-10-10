@@ -169,6 +169,7 @@ func (c *Client) RemoveOrderBookStream(s ...string) error {
 	if err != nil {
 		return err
 	}
+
 	return c.ws.WriteMessage(websocket.TextMessage, b)
 }
 
